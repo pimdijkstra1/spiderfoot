@@ -1,0 +1,76 @@
+name: Spiderfoot OSINT Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Scan target (domain, IP, email, username, etc.)'
+        required: true
+        default: 'isa hulleman'
+
+jobs:
+  spiderfoot-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Spiderfoot
+        run: |
+          pip install spiderfoot
+      
+      - name: Run Spiderfoot scan on Isa Hulleman
+        run: |
+          mkdir -p spiderfoot-results
+          
+          # Scan for each target
+          python -m spiderfoot.spiderfoot \
+            -s "isa hulleman" \
+            -t PERSON \
+            -o json \
+            -f spiderfoot-results/isa_hulleman.json
+          
+          python -m spiderfoot.spiderfoot \
+            -s "isahullemanx" \
+            -t USERNAME \
+            -o json \
+            -f spiderfoot-results/isahullemanx.json
+          
+          python -m spiderfoot.spiderfoot \
+            -s "isaaachristina" \
+            -t USERNAME \
+            -o json \
+            -f spiderfoot-results/isaaachristina.json
+          
+          python -m spiderfoot.spiderfoot \
+            -s "isa.bunny@hotmail.com" \
+            -t EMAILADDR \
+            -o json \
+            -f spiderfoot-results/isa_bunny_email.json
+      
+      - name: Upload results as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: spiderfoot-scan-results
+          path: spiderfoot-results/
+          retention-days: 30
+      
+      - name: Display scan summary
+        if: always()
+        run: |
+          echo "## Spiderfoot Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Scanned targets:" >> $GITHUB_STEP_SUMMARY
+          echo "- isa hulleman (PERSON)" >> $GITHUB_STEP_SUMMARY
+          echo "- isahullemanx (USERNAME)" >> $GITHUB_STEP_SUMMARY
+          echo "- isaaachristina (USERNAME)" >> $GITHUB_STEP_SUMMARY
+          echo "- isa.bunny@hotmail.com (EMAIL)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Results saved to artifacts" >> $GITHUB_STEP_SUMMARY
